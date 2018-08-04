@@ -1,0 +1,90 @@
+The probability of winning with one head, P(1) of course, 1/2.
+
+The probability of winning with exactly N heads in a row is the probability you didn't win with N-1 heads times the probability of getting N heads in a row; i.e., P(n) = (1-P(n-1))2^-n.
+
+P(1) = 1/2 = 2^-1
+P(2) = (1 - 1/2)(1/4) = 2^-2 - 2^-3
+P(3) = (1 - (2^-2 - 2^-3))(2^-3) = 2^-3 - 2^-5 + 2^-6
+P(4) = (1 - (2^-3 - 2^-5 + 2^-6))(2^-4) = 2^-4 - 2^-7 + 2^-9 - 2^-10
+
+At this point, I saw the pattern: 
+
+P(N) = ∑{i=1,N} (-1)^(i+1) / 2^(T(N)-T(N-i))
+
+where T(N) = the Nth triangular number, N(N+1)/2. T(N) - T(N-i) = is the bottom i "rows" of a triangle N, which is how I saw the pattern in my mind. So, continuing along:
+
+P(1) = 2^-1
+P(2) = 2^-2 - 2^-3
+P(3) = 2^-3 - 2^-5 + 2^-6
+P(4) = 2^-4 - 2^-7 + 2^-9 - 2^-10
+P(5) = 2^-5 - 2^-9 + 2^-12 - 2^-14 + 2^-15
+P(6) = 2^-6 - 2^-11 + 2^-15 - 2^-18 + 2^-20 - 2^-21
+P(7) = 2^-7 - 2^-13 + 2^-18 - 2^-22 + 2^-25 - 2^-27 + 2^-28
+
+The answer will be the sum of all of these possibilities, A = ∑{i=1,inf} P(i). It looks like some stuff might cancel out -- let's see! So far, we have:
+
+There's only one 2^-1 term and 2^-2 term.
+
+There's a positive 2^-3 and a negative 2^-3 term that cancel each other out. Intersting.
+
+There's only one 2^-4. (It looks like if there's only one term, it'll appear in the far left of its line, so it'll always be positive. That's good if we're making a binary number out of this.
+
+The 2^-5 terms cancel each other. So far, our answer is 0.11010... in base 2.
+
+The 2^-6 terms *don't* cancel each other out. Hmmm. 0.110102..._(2) doesn't really work. Of course, that equals 0.110110..._(2). 
+
+2^-7 cancels out. 2^-8 will appear once, on the P(8) line. 2^-9 cancels out from what I've written, but I'll add one more when I reach P(9). 2^-10 will cancel out eventually, as will 2^-11 -- but 2^12 has two positive terms. 2^13 cancels out.
+
+So, that's 0.11011001101..._(2), which looks kinda random to me. My next step was to look up triangular numbers on Wikipedia to see if inspiration struck. What actually struck me was the link to the On-Line Encyclopedia of Integer Sequences, OEIS.
+
+I searched the positive exponents of P(6) -- {6, 11, 15, 18, 20, 21}. I found <https://oeis.org/A141419>, "[a] triangular sequence of coefficients of Dynkin diagram weights for the Cartan Groups B_n: t(n,m) = m*(2*n - m + 1)/2. As a rectangle, the accumulation array of A051340." I don't know what those are, but the numbers matched perfectly. When written as a rectangle: 
+
+   1   2   3   4   5   6   7   8   9  10
+   3   5   7   9  11  13  15  17  19  21
+   6   9  12  15  18  21  24  27  30  33
+  10  14  18  22  26  30  34  38  42  46
+  15  20  25  30  35  40  45  50  55  60
+  21  27  33  39  45  51  57  63  69  75
+  28  35  42  49  56  63  70  77  84  91
+
+...I noticed that if a number appeared in an odd row, that contributed +1 to the coefficient count; even rows contributed -1. I also saw that column 1 was the triangular numbers and each number in the other columns had the row number added to the value in the previous column. Time for Excel! Putting this formula into cell A1 and copying it from A1 to BW20 made a 75x20 version of the above:
+
+=ROW()*((ROW()-1)/2 + COLUMN())
+
+In column BZ, I put 1's and -1's as appropriate. Cell CA1 got this formula:
+
+=COUNTIF($A1:$BW1,COLUMN()-78)*$BZ1
+
+...which I copied from CA1 to EW20. This put a +1 or -1 in the column representing N (CA = 1, CB = 2, etc.) I summed up each of those columns and got the first 75 coefficients for the final answer:
+
+{1,1,0,1,0,2,0,1,1,0,0,2,0,0,2,1,0,1,0,2,0,0,0,2,1,0,0,2,0,2,...}
+
+Feeling lucky, I searched for that on OEIS. I got an exact hit: <https://oeis.org/A067742>, the "[n]umber of middle divisors of n, i.e., divisors in the half-open interval [√(n/2), √(n*2))." I know what that means, but I don't know what that has to do with the problem. At any rate, that's one way to write the answer:
+
+∑{i=1,inf} A067742(i) / 2^i
+
+which Python evaluates to 0.8501798308739793 for the first 75 terms. However, I'd like to think I can do better.
+
+Examining my spreadsheet, I found a few more rules and devised a formula for the coefficient of each term. As I mentioned, column A has the triangular numbers. Since each succesive member of each row adds the row number to the previous column, N will appear in row R if and only if both N ≥ T(R) and N ≡ T(R) (mod R). Returning to Wikipedia, I saw the concept of a triangular root, the inverse of the triangular number function: triroot(x) = (√(8x+1)-1) / 2. So, this gives us a computer-like formula for a coefficient:
+
+C(x) = ∑{j=1,floor(triroot(x))} (-1)^(j+1) [T(j) ≡ x (mod j)]
+
+...using Iverson's bracket notation that converts true values to 1 and false ones to 0. It works, but isn't the best.
+
+Going back to the <https://oeis.org/A141419>, I saw a note under the "Formula" section: "Let v = d*h with h odd be an integer factorization, then v = t(d+(h-1)/2, h) if h+1 <= 2*d, and v = t(d+(h-1)/2, 2*d) if h+1 > 2*d; see A209260." This gives me a much nicer formulation for C(x): take all the odd divisors of x, add 1 if they're less than or equal to 2d - 1 (since they're going in row h, which is odd), and subtract 1 otherwise (since they're going in row 2d, which is even). It's hard to write that as a mathematical function without LaTeX or something equivalent (which I don't know), so I'll just put in Python code:
+
+def coeff(x):
+    co = 0
+    for h in factors(x):
+        if h % 2 == 0: continue
+        if h + 1 <= 2 * x // h: co += 1
+        else: co -= 1
+    return co
+
+The double slash // is integer division; everything else should be obvious enough. This version is slightly faster than counting the middle divisors and a lot faster than the triroot/modulo/etc. version. (All of them give the same answer, the aforementioned 0.8501798308739793.) Here's my final answer:
+
+∑{i=1,inf} 2^-i × ∑{j in odd divisors of i} 2[j+1 ≤ 2i/j]-1
+
+... again using Iverson's brackets. 2[x]-1 gives 1 if x is true and -1 if x is false.
+
+Hopefully that's elegant enough!
