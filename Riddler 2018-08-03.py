@@ -27,7 +27,7 @@ def raw_results(num_coins, coin_chars='h+'):
     """coin_chars[0] will be considered "heads".
     Returns a Counter of the winning strings and how often they occurred.
     E.g., results['+hh'] will be 2**(num_coins-3)."""
-    
+
     results = collections.Counter() # results will be strings
     for coins in itertools.product(coin_chars, repeat=num_coins):
         results[judge(coins, coin_chars[0])] += 1
@@ -75,7 +75,7 @@ def summarize_brute_force():
 
 def build_mahonian(size):
     """(Not the full Mahonian; just the part that we need.)"""
-    
+
     # These are objects because the values will overflow numpy types.
     mahonian = np.zeros((size, size), dtype=object)
     mahonian[0, 0] = 1
@@ -92,7 +92,7 @@ def winning_prob(max_flips=250):
     """Returns the precise probability of winning within max_flips."""
 
     mahonian = build_mahonian(max_flips)
-    
+
     # Eventually, this will have A186426's values.
     coin_wins = collections.Counter()
     # This counts along each antidiagonal to count our winning ways.
@@ -106,7 +106,7 @@ def winning_prob(max_flips=250):
     return fractions.Fraction(wins, 2**max_flips)
     # If max_flips > 165, the value of this as a Python float freezes at
     # 0.7112119049133976.
-            
+
 ####################################################################
 ## Part 3: Really precise results
 ##
@@ -187,3 +187,7 @@ one_minus_qPoch_half = """0.7112119049133975787211002780707692199110
 
 # This removes the whitespace in the above.
 one_minus_qPoch_half = ''.join(one_minus_qPoch_half.split())
+
+wp = winning_prob()
+print(wp)
+print(float(wp))
