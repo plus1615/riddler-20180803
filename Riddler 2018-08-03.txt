@@ -1,0 +1,21 @@
+After I submitted my answer of about 85% Friday, I looked at some replies to your promotional tweet. The simulations were getting values of about 71%. Whoops! I couldn't figure out what I was doing wrong, so I decided to try brute force. I wrote a Python script to calculate all possible results, assuming you gave up after 23 flips. This is all in my GitHub project, <https://github.com/plus1615/riddler-20180803>.
+
+Looking at the results, I saw that 1 possible winning combination was of length 1, 0 of length 2, 1 of length 3, making a sequence of {1, 0, 1, 0, 1, 1, 1, 2, 3, 4, 6, 10, 15, 23, 36, 57, 90, 142, 225, 358, 571, 912, 1458}. I looked that up in OEIS and got a hit: A186426, the "antidiagonal sums of A177517." A177517 is the Mahonian numbers in a weird format, where cell (n, k) of A177517 is cell (k-2, n-k) of the Mahonian numbers.
+
+The Mahonian numbers, M(n), are the coefficients of each exponent of x in the product:
+    (1)(1 + x)(1 + x + x^2)...(1 + x + x^2 + ... + x^(n-1))
+M(1) = {1}; M(2) = {1, 1}; M(5) = {1, 4, 9, 15, 20, 22, 20, 15, 9, 4, 1}; etc.
+
+So, I wrote a function that would give the antidiagonal sums of this matrix. (Well, not exactly this matrix; I found it easier to understand if I transposed A177517 (which doesn't change the sums of the antidiagonals). Also, since post-transposition, all the values below the main diagonal were 0 and all the antidiagonals below the main antidiagonal were incomplete and useless, I didn't calculate anything below a line going from center left to the center to the top right.)
+
+The short winning coin sequences occur more often than the longer ones -- exponentially so, of course. For this example, I'll decide to quit after 250 flips. Out of the 2^250 possible ways you can flip a coin 250 times, you'll win after your 10th coin 4 * 2^(250-10) times (the 4 being the number of possible ways to win in exactly 10 coins -- ththhthhhh, thttthhhhh, tthtthhhhh, and ttththhhh, if I'm not mistaken. We didn't calculate these directly, though). Add all of these wins up and divide by 2^250 to get your answer:
+
+1286761130630840205338376497113160753384645932569460924325349840873736215769 / 1809251394333065553493296640760748560207343510400633813116524750123642650624
+
+This equals 0.7112119049133976.... (That's the default precision of a Python float; that number doesn't change between 166 flips and at least 5000 flips.) That's not the symbolic expression you seemed to be asking for, so I Googled it to see what came up. To my surprise, there was exactly one hit in English. Someone on r/math was asking for a symbolic representation of that number. One of their replies gave it to them:
+
+    $ 1 - (1/2; 1/2)_\infty $
+
+I recognized that as LaTeX, but didn't know what it meant. Fortunately, they said what it meant: it was the q-Pochhammer symbol, where (a; q)_n = \product_{k=0}^{n-1} (1 - aq^k). Jumping to Wolfram|Alpha, I entered 1 - QPochhammer[1/2, 1/2, infinity] (guessing that's what the function would be called and being correct) and got some symbolic manipulation, but no precise values. Going to Wikipedia, it said that there was a function ϕ(x) called the Euler function (not to be confused with the Euler totient function) that was equivalent to (x;x)_\infty. I tried that in Wolfram|Alpha without luck. Finally, I saw in their documentation that QPochhammer[] used default values of q = a and n = infinity if you only used one argument. I entered 1 - QPochhammer[1/2] and got a decimal approximation that matched mine (except the 6 at the end of mine was apparently rounded up). I stuck all the digits of the approximation that W|A would give me into my Python file.
+
+In summary: the answer is 1-ϕ(1/2), or just over 71%.
